@@ -265,7 +265,7 @@ GameVisibleLine:
     txa                                 ; transfer x to a
     sec                                 ; set carry flag
     sbc JetYPos                         ; minus JetYPos
-    cmp JET_HEIGHT                      ; are we inside the sprite?
+    cmp #JET_HEIGHT                     ; are we inside the sprite?
     bcc .DrawSpriteP0                   ; if result is less than sprite height, draw routine
     lda #0                              ; else, set lookup index to 0
 
@@ -283,7 +283,7 @@ GameVisibleLine:
     txa                                 ; transfer x to a
     sec                                 ; set carry flag
     sbc BomberYPos                      ; minus BomberYPos
-    cmp BOMBER_HEIGHT                   ; are we inside the sprite?
+    cmp #BOMBER_HEIGHT                   ; are we inside the sprite?
     bcc .DrawSpriteP1                   ; if result is less than sprite height, draw routine
     lda #0                              ; else, set lookup index to 0
 
@@ -353,7 +353,7 @@ CheckP0Left:
     cmp #35
     bmi CheckP0Right
     dec JetXPos
-    lda JET_HEIGHT                      ; store the jet height in the anim offset
+    lda #JET_HEIGHT                      ; store the jet height in the anim offset
     sta JetAnimOffset
 
 CheckP0Right:
@@ -364,7 +364,7 @@ CheckP0Right:
     cmp #100
     bpl CheckButtonPressed
     inc JetXPos
-    lda JET_HEIGHT                      ; store the jet height in the anim offset
+    lda #JET_HEIGHT                      ; store the jet height in the anim offset
     sta JetAnimOffset
 
 CheckButtonPressed:
@@ -401,11 +401,6 @@ UpdateBomberPosition:
 .SetScoreValues:
     sed                                 ; set decimal mode for score and timer values
 
-    lda Score                           ; BCD doesnt work with inc, so add 1 manually
-    clc
-    adc #1
-    sta Score
-
     lda Timer                           ; BCD doesnt work with inc, so add 1 manually
     clc
     adc #1
@@ -439,7 +434,14 @@ CheckCollisionM0P1:
     jmp EndCollisionCheck
 
 .M0P1Collided
-
+    sed
+    lda Score
+    clc
+    adc #1
+    sta Score                           ; Add 1 to the score via BCD
+    cld                                 ; disable BCD
+    lda #0
+    sta MissileYPos                     ; reset the missile position
 
 EndCollisionCheck:                      ; fallback
     sta CXCLR                           ; clear all collision flags before next step
