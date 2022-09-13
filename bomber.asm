@@ -132,12 +132,12 @@ StartFrame:
     REPEND
     lda #0
     sta VSYNC                           ; turn off Vsync
-    REPEAT 33
-        sta WSYNC                       ; 33 lines of VBlank )4 wasted in next section
+    REPEAT 32
+        sta WSYNC                       ; 32 lines of VBlank )4 wasted in next section
     REPEND
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Calculations and tasks performed pre-VBlank
+;; Calculations and tasks performed during VBlank
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
     lda JetXPos
@@ -154,10 +154,13 @@ StartFrame:
 
     jsr CalculateDigitOffset                ; calculate the scoreboard digit lookup table offset
 
+    jsr GenerateJetSound                    ; configure and enable jet engine audio
+
     sta WSYNC
     sta HMOVE                               ; apply the horizontal offsets applied in prior routines
 
     lda #0
+    sta AUDV1                           ; volume 0-15
     sta VBLANK                          ; turn off VBlank
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -380,6 +383,14 @@ CheckButtonPressed:
     clc
     adc #8
     sta MissileYPos          ; set the missile Y position equal to the player 0
+    lda #5
+    sta AUDV1                           ; volume 0-15
+
+    lda #0                              ; loads the jet y pos
+    sta AUDF1                           ; frequency 0-31
+
+    lda #1
+    sta AUDC1                           ; wave type 0-15
 
 EndInputCheck:                          ; fallback for when no input is detected
 
@@ -451,6 +462,29 @@ EndCollisionCheck:                      ; fallback
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
     jmp StartFrame                      ; continue from StartFrame
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Gewnerate sound effects for the jet sprite based on Y co-ord
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+GenerateJetSound subroutine
+    lda #1
+    sta AUDV0                           ; volume 0-15
+
+    lda JetYPos                        ; loads the jet y pos
+    lsr
+    lsr
+    lsr                                 ; divide by 8 (2x2x2)
+    sta Temp                            ; save tot Temp
+    lda #25
+    sec
+    sbc Temp                            ; minus temp from 25
+    sta AUDF0                           ; frequency 0-31
+
+    lda #8
+    sta AUDC0                           ; wave type 0-15
+
+    rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Set the colours for terrain and river
